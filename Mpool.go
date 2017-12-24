@@ -31,7 +31,7 @@ type Dispatcher struct {
 	MaxWorkers int                    //获取 调试的大小
 	WorkerPool chan chan RunnableTask //注册和工人一样的通道
 	JobQueue   chan RunnableTask
-	Wg sync.WaitGroup
+	Wg         sync.WaitGroup
 	IsLog      bool
 }
 
@@ -69,7 +69,7 @@ func (w Worker) Stop() {
 func (d *Dispatcher) Run() {
 	// 开始运行
 	for i := 0; i < d.MaxWorkers; i++ {
-		worker := NewWorker(d, d.WorkerPool, fmt.Sprintf("%s-work-%s", d.Name, strconv.Itoa(i)),d.IsLog)
+		worker := NewWorker(d, d.WorkerPool, fmt.Sprintf("%s-work-%s", d.Name, strconv.Itoa(i)), d.IsLog)
 		//开始工作
 		worker.LoopWork()
 	}
@@ -77,11 +77,11 @@ func (d *Dispatcher) Run() {
 	go d.LoopGetTask()
 
 }
-func (d *Dispatcher) AddTask(job RunnableTask){
+func (d *Dispatcher) AddTask(job RunnableTask) {
 	d.Wg.Add(1)
 	d.JobQueue <- job
 }
-func (d *Dispatcher) Close(){
+func (d *Dispatcher) Close() {
 	d.Wg.Wait()
 }
 func (d *Dispatcher) LoopGetTask() {
@@ -112,7 +112,7 @@ func NewWorker(disp *Dispatcher, workerPool chan chan RunnableTask, name string,
 	log.If(isLog).Info("调度者[%s]创建了一个worker:%s \n", disp.Name, name)
 	return Worker{
 		Name:       name,                    //工人的名字
-		Dispatcher: disp,										 // 调用者
+		Dispatcher: disp,                    // 调用者
 		WorkerPool: workerPool,              //工人在哪个对象池里工作,可以理解成部门
 		JobChannel: make(chan RunnableTask), //工人的任务
 		quit:       make(chan bool),
