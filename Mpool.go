@@ -49,11 +49,11 @@ func (w *Worker) LoopWork() {
 				log.If(w.IsLog).Info("woker[%s]接收到了任务 [%s]", w.Name, job.GetName())
 				job.Run(job.GetNextDispatcher())
 				log.If(w.IsLog).Info("woker[%s]完成任务 [%s]", w.Name, job.GetName())
-				w.Wg.Done()
+				w.Dispatcher.Wg.Done()
 			//接收到了任务
 			case <-w.quit:
 				log.If(w.IsLog).Info("woker[%s]退出。", w.Name)
-				w.Wg.Done()
+				w.Dispatcher.Wg.Done()
 				return
 			}
 		}
