@@ -77,6 +77,7 @@ func (d *Dispatcher) LoopGetTask() {
 	for {
 		select {
 		case job := <-d.JobQueue:
+			
 			log.If(d.IsLog).Info("调度者[%s][%d]接收到一个工作任务 %s ", d.Name, len(d.WorkerPool), job.GetName())
 			// 调度者接收到一个工作任务
 			go func(job RunnableTask) {
