@@ -64,7 +64,7 @@ func (w Worker) Stop() {
 func (d *Dispatcher) Run() {
 	// 开始运行
 	for i := 0; i < d.maxWorkers; i++ {
-		worker := NewWorker(d.WorkerPool, fmt.Sprintf("%s-work-%s", d.Name, strconv.Itoa(i)))
+		worker := NewWorker(d.WorkerPool, fmt.Sprintf("%s-work-%s", d.Name, strconv.Itoa(i)),d.IsLog)
 		//开始工作
 		worker.LoopWork()
 	}
@@ -77,7 +77,7 @@ func (d *Dispatcher) LoopGetTask() {
 	for {
 		select {
 		case job := <-d.JobQueue:
-			
+
 			log.If(d.IsLog).Info("调度者[%s][%d]接收到一个工作任务 %s ", d.Name, len(d.WorkerPool), job.GetName())
 			// 调度者接收到一个工作任务
 			go func(job RunnableTask) {
