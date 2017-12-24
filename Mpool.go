@@ -63,7 +63,7 @@ func (w Worker) Stop() {
 
 func (d *Dispatcher) Run() {
 	// 开始运行
-	for i := 0; i < d.maxWorkers; i++ {
+	for i := 0; i < d.MaxWorkers; i++ {
 		worker := NewWorker(d.WorkerPool, fmt.Sprintf("%s-work-%s", d.Name, strconv.Itoa(i)),d.IsLog)
 		//开始工作
 		worker.LoopWork()
