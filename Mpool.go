@@ -99,7 +99,7 @@ func (d *Dispatcher) LoopGetTask() {
 func NewWorker(workerPool chan chan RunnableTask, name string, isLog bool) Worker {
 	log.If(isLog).Info("创建了一个worker:%s \n", name)
 	return Worker{
-		name:       name,                    //工人的名字
+		Name:       name,                    //工人的名字
 		WorkerPool: workerPool,              //工人在哪个对象池里工作,可以理解成部门
 		JobChannel: make(chan RunnableTask), //工人的任务
 		quit:       make(chan bool),
@@ -114,8 +114,8 @@ func NewDispatcher(dname string, maxWorkers int, isLog bool) *Dispatcher {
 	log.If(isLog).Info("调度者(%s) 初始化完毕.", dname)
 	return &Dispatcher{
 		WorkerPool: pool,       // 将工人放到一个池中,可以理解成一个部门中
-		name:       dname,      //调度者的名字
-		maxWorkers: maxWorkers, //这个调度者有好多个工人
+		Name:       dname,      //调度者的名字
+		MaxWorkers: maxWorkers, //这个调度者有好多个工人
 		JobQueue:   jq,
 		IsLog:      isLog,
 	}
