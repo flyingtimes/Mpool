@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/mkideal/log"
 	"strconv"
+	"sync"
 )
 
 //任务
@@ -15,6 +16,7 @@ type RunnableTask interface {
 
 //  工人
 type Worker struct {
+	Dispatcher *Dispatcher
 	Name       string                 //工人的名字
 	WorkerPool chan chan RunnableTask //对象池
 	JobChannel chan RunnableTask      //通道里面拿
@@ -29,6 +31,7 @@ type Dispatcher struct {
 	MaxWorkers int                    //获取 调试的大小
 	WorkerPool chan chan RunnableTask //注册和工人一样的通道
 	JobQueue   chan RunnableTask
+	Wg sync.WaitGroup
 	IsLog      bool
 }
 
@@ -46,9 +49,11 @@ func (w *Worker) LoopWork() {
 				log.If(w.IsLog).Info("woker[%s]接收到了任务 [%s]", w.Name, job.GetName())
 				job.Run(job.GetNextDispatcher())
 				log.If(w.IsLog).Info("woker[%s]完成任务 [%s]", w.Name, job.GetName())
+				w.Wg.Done()
 			//接收到了任务
 			case <-w.quit:
 				log.If(w.IsLog).Info("woker[%s]退出。", w.Name)
+				w.Wg.Done()
 				return
 			}
 		}
@@ -64,7 +69,7 @@ func (w Worker) Stop() {
 func (d *Dispatcher) Run() {
 	// 开始运行
 	for i := 0; i < d.MaxWorkers; i++ {
-		worker := NewWorker(d.WorkerPool, fmt.Sprintf("%s-work-%s", d.Name, strconv.Itoa(i)),d.IsLog)
+		worker := NewWorker(d, d.WorkerPool, fmt.Sprintf("%s-work-%s", d.Name, strconv.Itoa(i)),d.IsLog)
 		//开始工作
 		worker.LoopWork()
 	}
@@ -72,7 +77,13 @@ func (d *Dispatcher) Run() {
 	go d.LoopGetTask()
 
 }
-
+func (d *Dispatcher) AddTask(job RunnableTask){
+	d.Wg.Add(1)
+	d.JobQueue <- job
+}
+func (d *Dispatcher) Close(){
+	d.Wg.Wait()
+}
 func (d *Dispatcher) LoopGetTask() {
 	for {
 		select {
@@ -97,10 +108,11 @@ func (d *Dispatcher) LoopGetTask() {
 }
 
 // 新建一个工人
-func NewWorker(workerPool chan chan RunnableTask, name string, isLog bool) Worker {
-	log.If(isLog).Info("创建了一个worker:%s \n", name)
+func NewWorker(disp *Dispatcher, workerPool chan chan RunnableTask, name string, isLog bool) Worker {
+	log.If(isLog).Info("调度者[%s]创建了一个worker:%s \n", disp.Name, name)
 	return Worker{
 		Name:       name,                    //工人的名字
+		Dispatcher: disp,										 // 调用者
 		WorkerPool: workerPool,              //工人在哪个对象池里工作,可以理解成部门
 		JobChannel: make(chan RunnableTask), //工人的任务
 		quit:       make(chan bool),
