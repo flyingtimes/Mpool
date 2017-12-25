@@ -6,7 +6,18 @@ import (
 	"strconv"
 	"sync"
 )
+var Log *log
+var IsLog bool
 
+func Setup(cores int, pool_log *log){
+	if (pool_log!=nil){
+		Log := pool_log
+		isLog := true
+	}else{
+		Log := &log
+		isLog := false
+	}
+}
 //任务
 type RunnableTask interface {
 	GetName() string
@@ -41,18 +52,18 @@ func (w *Worker) LoopWork() {
 
 		for {
 			//注册到对象池中,
-			log.If(w.IsLog).Info("woker[%s]返回任务池等待任务", w.Name)
+			Log.If(IsLog).Info("woker[%s]返回任务池等待任务", w.Name)
 			w.WorkerPool <- w.JobChannel
 			select {
 			//接收到了新的任务
 			case job := <-w.JobChannel:
-				log.If(w.IsLog).Info("woker[%s]接收到了任务 [%s]", w.Name, job.GetName())
+				Log.If(IsLog).Info("woker[%s]接收到了任务 [%s]", w.Name, job.GetName())
 				job.Run(job.GetNextDispatcher())
 				log.If(w.IsLog).Info("woker[%s]完成任务 [%s]", w.Name, job.GetName())
 				w.Dispatcher.Wg.Done()
 			//接收到了任务
 			case <-w.quit:
-				log.If(w.IsLog).Info("woker[%s]退出。", w.Name)
+				Log.If(IsLog).Info("woker[%s]退出。", w.Name)
 				w.Dispatcher.Wg.Done()
 				return
 			}
@@ -89,7 +100,7 @@ func (d *Dispatcher) LoopGetTask() {
 		select {
 		case job := <-d.JobQueue:
 
-			log.If(d.IsLog).Info("调度者[%s][%d]接收到一个工作任务 %s ", d.Name, len(d.WorkerPool), job.GetName())
+			Log.If(IsLog).Info("调度者[%s][%d]接收到一个工作任务 %s ", d.Name, len(d.WorkerPool), job.GetName())
 			// 调度者接收到一个工作任务
 			go func(job RunnableTask) {
 				//从现有的对象池中拿出一个
@@ -108,8 +119,8 @@ func (d *Dispatcher) LoopGetTask() {
 }
 
 // 新建一个工人
-func NewWorker(disp *Dispatcher, workerPool chan chan RunnableTask, name string, isLog bool) Worker {
-	log.If(isLog).Info("调度者[%s]创建了一个worker:%s \n", disp.Name, name)
+func NewWorker(disp *Dispatcher, workerPool chan chan RunnableTask, name string) Worker {
+	Log.If(IsLog).Info("调度者[%s]创建了一个worker:%s \n", disp.Name, name)
 	return Worker{
 		Name:       name,                    //工人的名字
 		Dispatcher: disp,                    // 调用者
@@ -121,10 +132,10 @@ func NewWorker(disp *Dispatcher, workerPool chan chan RunnableTask, name string,
 }
 
 // 创建调度者
-func NewDispatcher(dname string, maxWorkers int, isLog bool) *Dispatcher {
+func NewDispatcher(dname string, maxWorkers int) *Dispatcher {
 	jq := make(chan RunnableTask, maxWorkers)
 	pool := make(chan chan RunnableTask, maxWorkers)
-	log.If(isLog).Info("调度者(%s) 初始化完毕.", dname)
+	Log.If(IsLog).Info("调度者(%s) 初始化完毕.", dname)
 	return &Dispatcher{
 		WorkerPool: pool,       // 将工人放到一个池中,可以理解成一个部门中
 		Name:       dname,      //调度者的名字
