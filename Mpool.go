@@ -9,12 +9,12 @@ import (
 var Log *log
 var IsLog bool
 
-func Setup(cores int, pool_log *log){
+func Setup(cores int, pool_log log){
 	if (pool_log!=nil){
 		Log := pool_log
 		isLog := true
 	}else{
-		Log := &log
+		Log := log
 		isLog := false
 	}
 }
